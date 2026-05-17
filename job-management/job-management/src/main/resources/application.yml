@@ -1,7 +1,9 @@
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
 
 spring:
+  config:
+    import: optional:file:.env[.properties]
   application:
     name: job-management
   datasource:
@@ -23,4 +25,4 @@ springdoc:
 
 jwt:
   secret: ${JWT_SECRET:change-this-secret-before-production}
-  expiration: 86400000
+  expiration: ${JWT_EXPIRATION:86400000}

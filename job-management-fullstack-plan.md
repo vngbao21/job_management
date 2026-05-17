@@ -715,3 +715,129 @@ Dashboard chart
 CV management
 Deploy production
 ```
+
+---
+
+# PROJECT PROGRESS
+
+Last updated: 2026-05-18
+
+## Backend Progress
+
+### BE 1 - Setup project: Done
+
+Completed:
+
+```txt
+Spring Boot backend skeleton
+Maven dependencies for WebMVC, Security, JPA, MySQL, Validation, Lombok, Swagger
+application.yml base config
+.env and .env.example for local config
+.gitignore updated to ignore .env secrets
+Base API response format
+Global exception handler
+CORS config
+Temporary health endpoint: GET /api/health
+Swagger/OpenAPI setup
+```
+
+Files added/updated:
+
+```txt
+pom.xml
+src/main/resources/application.yml
+.env
+.env.example
+src/main/java/com/app/job_management/dto/response/ApiResponse.java
+src/main/java/com/app/job_management/exception/ApiException.java
+src/main/java/com/app/job_management/exception/GlobalExceptionHandler.java
+src/main/java/com/app/job_management/config/CorsConfig.java
+src/main/java/com/app/job_management/config/SecurityConfig.java
+src/main/java/com/app/job_management/config/SwaggerConfig.java
+src/main/java/com/app/job_management/controller/HealthController.java
+```
+
+### BE 2 - Auth base: In progress
+
+Completed:
+
+```txt
+User entity
+Role enum
+UserStatus enum
+UserRepository
+RegisterRequest
+LoginRequest
+UserResponse
+LoginResponse
+AuthService register
+AuthService login
+AuthController register endpoint
+AuthController login endpoint
+PasswordEncoder with BCrypt
+JWT dependency
+JwtService generate access token
+JwtService extract email from token
+CustomUserDetailsService
+JwtAuthenticationFilter
+SecurityConfig stateless JWT filter
+Protected endpoint: GET /api/auth/me
+Swagger Bearer JWT security scheme
+```
+
+Current Auth APIs:
+
+```txt
+POST /api/auth/register
+POST /api/auth/login
+GET  /api/auth/me
+```
+
+Files added/updated:
+
+```txt
+src/main/java/com/app/job_management/entity/User.java
+src/main/java/com/app/job_management/entity/Role.java
+src/main/java/com/app/job_management/entity/UserStatus.java
+src/main/java/com/app/job_management/repository/UserRepository.java
+src/main/java/com/app/job_management/dto/request/RegisterRequest.java
+src/main/java/com/app/job_management/dto/request/LoginRequest.java
+src/main/java/com/app/job_management/dto/response/UserResponse.java
+src/main/java/com/app/job_management/dto/response/LoginResponse.java
+src/main/java/com/app/job_management/service/AuthService.java
+src/main/java/com/app/job_management/controller/AuthController.java
+src/main/java/com/app/job_management/security/JwtService.java
+src/main/java/com/app/job_management/security/CustomUserDetailsService.java
+src/main/java/com/app/job_management/security/JwtAuthenticationFilter.java
+```
+
+Validation status:
+
+```txt
+Backend compile: PASS
+Register/login code review: PASS
+JWT filter compile: PASS
+Swagger JWT config compile: PASS
+Manual Swagger/Postman test: pending
+```
+
+Known notes:
+
+```txt
+MySQL/DBeaver connection still needs local confirmation.
+Swagger /api/auth/me returns 403 if Authorization header is missing.
+Swagger Authorize popup should be used with accessToken from login.
+JwtAuthenticationFilter currently parses token; next step should improve invalid/expired token handling.
+Test config currently excludes JPA for context test, so full mvnw test may need adjustment after auth wiring.
+```
+
+## Next Backend Steps
+
+```txt
+1. Manually test POST /api/auth/register with MySQL/DBeaver.
+2. Manually test POST /api/auth/login and copy accessToken.
+3. Use Swagger Authorize to call GET /api/auth/me.
+4. Improve JWT invalid/expired token error handling.
+5. Add role-based authorization.
+6. Start Job entity and public job APIs.
+```
