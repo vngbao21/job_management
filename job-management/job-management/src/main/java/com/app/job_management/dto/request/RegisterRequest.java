@@ -7,15 +7,15 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record RegisterRequest(
-        @NotBlank @Email String email,
+                @NotBlank @Email String email,
 
-        @NotBlank @Size(min = 6, message = "Password must be at least 6 characters long") String password,
+                @NotBlank @Size(min = 6, message = "Password must be at least 6 characters long") String password,
 
-        @NotBlank String fullName,
+                @NotBlank String fullName,
 
-        String phone,
+                String phone,
 
-        @NotNull Role role
+                @NotNull Role role
 
 ) {
 

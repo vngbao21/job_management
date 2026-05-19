@@ -325,6 +325,258 @@ REJECTED
 
 ---
 
+# DATABASE DESIGN V1
+
+## Scope
+
+Database v1 supports the first working recruitment flow:
+
+```txt
+Register/Login
+JWT auth
+Company profile
+Company create job
+Admin approve/reject job
+Candidate view approved jobs
+Candidate apply job
+Company view job applications
+Company accept/reject application
+```
+
+## ERD Text
+
+```txt
+users 1 ----- 0..1 companies
+companies 1 ----- n jobs
+users(candidate) 1 ----- n job_applications
+jobs 1 ----- n job_applications
+```
+
+Meaning:
+
+```txt
+One COMPANY user can own one company profile.
+One company can post many jobs.
+One CANDIDATE user can apply to many jobs.
+One job can receive many applications.
+One candidate can apply to the same job only once.
+```
+
+## Tables
+
+### users
+
+Purpose:
+
+```txt
+Store login identity and role for Admin, Company, Candidate.
+```
+
+Columns:
+
+```txt
+id BIGINT PK AUTO_INCREMENT
+email VARCHAR(150) NOT NULL UNIQUE
+password VARCHAR(255) NOT NULL
+full_name VARCHAR(120) NOT NULL
+phone VARCHAR(30)
+role VARCHAR(30) NOT NULL
+status VARCHAR(30) NOT NULL
+created_at DATETIME NOT NULL
+updated_at DATETIME NOT NULL
+```
+
+Enums:
+
+```txt
+role: ADMIN, COMPANY, CANDIDATE
+status: ACTIVE, INACTIVE
+```
+
+Indexes/constraints:
+
+```txt
+UNIQUE(email)
+INDEX(role)
+INDEX(status)
+```
+
+### companies
+
+Purpose:
+
+```txt
+Store company profile data owned by a COMPANY user.
+```
+
+Columns:
+
+```txt
+id BIGINT PK AUTO_INCREMENT
+user_id BIGINT NOT NULL
+company_name VARCHAR(180) NOT NULL
+description TEXT
+website VARCHAR(255)
+address VARCHAR(255)
+created_at DATETIME NOT NULL
+updated_at DATETIME NOT NULL
+```
+
+Foreign keys:
+
+```txt
+user_id -> users.id
+```
+
+Indexes/constraints:
+
+```txt
+UNIQUE(user_id)
+INDEX(company_name)
+```
+
+Business rule:
+
+```txt
+Only users with role COMPANY should have a company profile.
+Application code enforces this rule.
+```
+
+### jobs
+
+Purpose:
+
+```txt
+Store jobs posted by companies.
+Admin approval decides whether a job is visible publicly.
+```
+
+Columns:
+
+```txt
+id BIGINT PK AUTO_INCREMENT
+company_id BIGINT NOT NULL
+title VARCHAR(180) NOT NULL
+description TEXT NOT NULL
+requirement TEXT
+salary_min DECIMAL(12,2)
+salary_max DECIMAL(12,2)
+location VARCHAR(150) NOT NULL
+job_type VARCHAR(30) NOT NULL
+status VARCHAR(30) NOT NULL
+created_at DATETIME NOT NULL
+updated_at DATETIME NOT NULL
+```
+
+Foreign keys:
+
+```txt
+company_id -> companies.id
+```
+
+Enums:
+
+```txt
+job_type: FULL_TIME, PART_TIME, INTERNSHIP, REMOTE, CONTRACT
+status: PENDING, APPROVED, REJECTED, CLOSED
+```
+
+Indexes/constraints:
+
+```txt
+INDEX(company_id)
+INDEX(status)
+INDEX(location)
+INDEX(job_type)
+INDEX(title)
+```
+
+Business rules:
+
+```txt
+New company jobs start as PENDING.
+Only APPROVED jobs are visible in public job list/detail APIs.
+CLOSED jobs are no longer open for application.
+```
+
+### job_applications
+
+Purpose:
+
+```txt
+Store candidate applications to jobs.
+```
+
+Columns:
+
+```txt
+id BIGINT PK AUTO_INCREMENT
+job_id BIGINT NOT NULL
+candidate_id BIGINT NOT NULL
+cv_url VARCHAR(500)
+cover_letter TEXT
+status VARCHAR(30) NOT NULL
+created_at DATETIME NOT NULL
+updated_at DATETIME NOT NULL
+```
+
+Foreign keys:
+
+```txt
+job_id -> jobs.id
+candidate_id -> users.id
+```
+
+Enums:
+
+```txt
+status: PENDING, ACCEPTED, REJECTED
+```
+
+Indexes/constraints:
+
+```txt
+UNIQUE(job_id, candidate_id)
+INDEX(job_id)
+INDEX(candidate_id)
+INDEX(status)
+```
+
+Business rules:
+
+```txt
+Only users with role CANDIDATE can apply.
+Candidate can apply to the same job only once.
+New applications start as PENDING.
+Company can ACCEPT or REJECT applications for its own jobs.
+```
+
+## Entity Implementation Order
+
+```txt
+1. User - done
+2. Company
+3. JobStatus, JobType, Job
+4. ApplicationStatus, JobApplication
+5. Repository layer for Company, Job, JobApplication
+6. Company profile API
+7. Company job CRUD API
+8. Public approved job API
+9. Candidate apply API
+10. Admin approve/reject job API
+```
+
+## Notes
+
+```txt
+Use application-level validation for role-specific rules.
+Use database constraints for uniqueness and foreign-key integrity.
+Use DTOs to avoid exposing entity internals directly.
+Do not expose password in any response.
+```
+
+---
+
 ## 9. Backend API List
 
 ### Auth API
