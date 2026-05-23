@@ -972,7 +972,35 @@ Deploy production
 
 # PROJECT PROGRESS
 
-Last updated: 2026-05-18
+Last updated: 2026-05-23
+
+## Collaboration Rule
+
+```txt
+Assistant role: teacher/mentor only.
+User role: implement code directly.
+
+For future sessions, the assistant should guide step by step, explain concepts,
+review errors, suggest file names/classes/methods, and help debug from logs or screenshots.
+
+The assistant should not directly edit source code unless the user explicitly asks for implementation.
+Default behavior is instruction-first, code examples allowed, but user writes the code.
+```
+
+## Current Source Layout
+
+```txt
+Backend source: job-management/job-management
+Frontend source: Fe-App
+Plan file: job-management-fullstack-plan.md
+```
+
+Note:
+
+```txt
+Original frontend plan targets React TypeScript, but current frontend source is Vite + Vue 3 + TypeScript.
+Decide whether to continue with Vue or recreate frontend as React before building FE auth/job screens.
+```
 
 ## Backend Progress
 
@@ -991,12 +1019,14 @@ Global exception handler
 CORS config
 Temporary health endpoint: GET /api/health
 Swagger/OpenAPI setup
+Database init file: database/init.sql
 ```
 
 Files added/updated:
 
 ```txt
 pom.xml
+database/init.sql
 src/main/resources/application.yml
 .env
 .env.example
@@ -1004,12 +1034,13 @@ src/main/java/com/app/job_management/dto/response/ApiResponse.java
 src/main/java/com/app/job_management/exception/ApiException.java
 src/main/java/com/app/job_management/exception/GlobalExceptionHandler.java
 src/main/java/com/app/job_management/config/CorsConfig.java
+src/main/java/com/app/job_management/config/JacksonConfig.java
 src/main/java/com/app/job_management/config/SecurityConfig.java
 src/main/java/com/app/job_management/config/SwaggerConfig.java
 src/main/java/com/app/job_management/controller/HealthController.java
 ```
 
-### BE 2 - Auth base: In progress
+### BE 2 - Auth + JWT: Mostly done
 
 Completed:
 
@@ -1035,6 +1066,10 @@ JwtAuthenticationFilter
 SecurityConfig stateless JWT filter
 Protected endpoint: GET /api/auth/me
 Swagger Bearer JWT security scheme
+CustomAuthenticationEntryPoint for 401 responses
+CustomAccessDeniedHandler for 403 responses
+SecurityErrorResponseWriter for consistent security error body
+Role-based route authorization for candidate/company/admin paths
 ```
 
 Current Auth APIs:
@@ -1061,26 +1096,123 @@ src/main/java/com/app/job_management/controller/AuthController.java
 src/main/java/com/app/job_management/security/JwtService.java
 src/main/java/com/app/job_management/security/CustomUserDetailsService.java
 src/main/java/com/app/job_management/security/JwtAuthenticationFilter.java
+src/main/java/com/app/job_management/security/CustomAuthenticationEntryPoint.java
+src/main/java/com/app/job_management/security/CustomAccessDeniedHandler.java
+src/main/java/com/app/job_management/security/SecurityErrorResponseWriter.java
+```
+
+Remaining:
+
+```txt
+Manual Swagger/Postman test with MySQL
+Confirm invalid/expired JWT response behavior end to end
+Confirm role-based access with ADMIN, COMPANY, CANDIDATE users
+```
+
+### BE 3 - Company profile: In progress
+
+Completed:
+
+```txt
+Company entity
+CompanyRepository
+CompanyProfileRequest
+CompanyResponse
+CompanyService create/get/update profile
+CompanyController profile endpoints
+Role check: only COMPANY users can manage company profiles
+Duplicate profile prevention by user
+```
+
+Current Company APIs:
+
+```txt
+POST /api/company/profile
+GET  /api/company/profile
+PUT  /api/company/profile
+```
+
+Files added/updated:
+
+```txt
+src/main/java/com/app/job_management/entity/Company.java
+src/main/java/com/app/job_management/repository/CompanyRepository.java
+src/main/java/com/app/job_management/dto/request/CompanyProfileRequest.java
+src/main/java/com/app/job_management/dto/response/CompanyResponse.java
+src/main/java/com/app/job_management/service/CompanyService.java
+src/main/java/com/app/job_management/controller/CompanyController.java
+```
+
+Fixed during 2026-05-23 review:
+
+```txt
+CompanyController now imports Spring's RequestBody annotation instead of Swagger's RequestBody annotation.
+Maven wrapper null Target handling fixed so mvnw.cmd can start correctly.
+Context test now mocks UserRepository and CompanyRepository while JPA/DataSource are excluded.
+```
+
+Remaining:
+
+```txt
+Manual Swagger/Postman test for create/get/update company profile
+Add database-level company table constraints/indexes if not relying only on Hibernate ddl-auto
+Start Job entity, JobStatus, JobType, repository, and company job CRUD
+```
+
+### BE 4 - Job/Application/Admin: Not started
+
+Pending:
+
+```txt
+JobStatus, JobType, Job entity
+ApplicationStatus, JobApplication entity
+JobRepository
+JobApplicationRepository
+Company job CRUD APIs
+Public approved job list/detail APIs
+Candidate apply APIs
+Company application review APIs
+Admin approve/reject job APIs
+Admin user management APIs
+```
+
+## Frontend Progress
+
+### FE 1 - Setup UI base: Starter only
+
+Current status:
+
+```txt
+Vite + Vue 3 + TypeScript project exists in Fe-App
+Default App.vue renders HelloWorld component
+Assets exist: hero.png, vite.svg, vue.svg
+No auth/job/company/admin screens yet
+No router, Axios client, TanStack Query, React Hook Form, or Zod yet
 ```
 
 Validation status:
 
 ```txt
-Backend compile: PASS
-Register/login code review: PASS
-JWT filter compile: PASS
-Swagger JWT config compile: PASS
-Manual Swagger/Postman test: pending
+Frontend build: PASS on 2026-05-23
+Command: npm run build
 ```
 
-Known notes:
+Decision needed:
 
 ```txt
-MySQL/DBeaver connection still needs local confirmation.
-Swagger /api/auth/me returns 403 if Authorization header is missing.
-Swagger Authorize popup should be used with accessToken from login.
-JwtAuthenticationFilter currently parses token; next step should improve invalid/expired token handling.
-Test config currently excludes JPA for context test, so full mvnw test may need adjustment after auth wiring.
+Option 1: Continue frontend with Vue and update FE plan accordingly.
+Option 2: Recreate frontend as React TypeScript to match the original plan.
+```
+
+## Validation Status
+
+```txt
+Frontend build: PASS
+Backend test/build: PASS on 2026-05-23
+Backend command: cmd /c mvnw.cmd test
+Manual API test: pending
+MySQL/DBeaver connection: pending local confirmation
+Git status: 4 modified files after this update
 ```
 
 ## Next Backend Steps
@@ -1089,7 +1221,17 @@ Test config currently excludes JPA for context test, so full mvnw test may need 
 1. Manually test POST /api/auth/register with MySQL/DBeaver.
 2. Manually test POST /api/auth/login and copy accessToken.
 3. Use Swagger Authorize to call GET /api/auth/me.
-4. Improve JWT invalid/expired token error handling.
-5. Add role-based authorization.
-6. Start Job entity and public job APIs.
+4. Manually test POST/GET/PUT /api/company/profile with a COMPANY token.
+5. Add JobStatus, JobType, Job entity, and JobRepository.
+6. Build company job CRUD APIs.
+7. Build public approved job list/detail APIs.
+```
+
+## Next Frontend Steps
+
+```txt
+1. Decide Vue vs React direction.
+2. If Vue: add Vue Router, Axios client, auth store, login/register pages.
+3. If React: recreate Fe-App using Vite React TypeScript and then add router/API/auth flow.
+4. Connect login/register to backend Auth APIs.
 ```
