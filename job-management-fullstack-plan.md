@@ -972,7 +972,7 @@ Deploy production
 
 # PROJECT PROGRESS
 
-Last updated: 2026-05-23
+Last updated: 2026-05-24
 
 ## Collaboration Rule
 
@@ -1040,7 +1040,7 @@ src/main/java/com/app/job_management/config/SwaggerConfig.java
 src/main/java/com/app/job_management/controller/HealthController.java
 ```
 
-### BE 2 - Auth + JWT: Mostly done
+### BE 2 - Auth + JWT: Done
 
 Completed:
 
@@ -1101,15 +1101,14 @@ src/main/java/com/app/job_management/security/CustomAccessDeniedHandler.java
 src/main/java/com/app/job_management/security/SecurityErrorResponseWriter.java
 ```
 
-Remaining:
+Validation:
 
 ```txt
-Manual Swagger/Postman test with MySQL
-Confirm invalid/expired JWT response behavior end to end
-Confirm role-based access with ADMIN, COMPANY, CANDIDATE users
+Postman test with MySQL: done
+Role-based access with ADMIN, COMPANY, CANDIDATE users: done
 ```
 
-### BE 3 - Company profile: In progress
+### BE 3 - Company profile: Done
 
 Completed:
 
@@ -1151,17 +1150,15 @@ Maven wrapper null Target handling fixed so mvnw.cmd can start correctly.
 Context test now mocks UserRepository and CompanyRepository while JPA/DataSource are excluded.
 ```
 
-Remaining:
+Validation:
 
 ```txt
-Manual Swagger/Postman test for create/get/update company profile
-Add database-level company table constraints/indexes if not relying only on Hibernate ddl-auto
-Start Job entity, JobStatus, JobType, repository, and company job CRUD
+Postman test for create/get/update company profile: done
 ```
 
-### BE 4 - Job/Application/Admin: Not started
+### BE 4 - Job/Application/Admin: Done
 
-Pending:
+Completed:
 
 ```txt
 JobStatus, JobType, Job entity
@@ -1173,65 +1170,100 @@ Public approved job list/detail APIs
 Candidate apply APIs
 Company application review APIs
 Admin approve/reject job APIs
+Postman collection for current API set
+Public job search/filter/pagination
+Salary range validation on job create/update
+Better API error handling for invalid JSON, enum/query param errors, unsupported media type, and database constraint violations
+```
+
+Current job APIs:
+
+```txt
+POST   /api/company/jobs
+GET    /api/company/jobs
+GET    /api/company/jobs/{id}
+PUT    /api/company/jobs/{id}
+DELETE /api/company/jobs/{id}
+GET    /api/admin/jobs/pending
+PATCH  /api/admin/jobs/{id}/approve
+PATCH  /api/admin/jobs/{id}/reject
+GET    /api/jobs?keyword=java&location=Ho Chi Minh&jobType=FULL_TIME&page=0&size=10
+GET    /api/jobs/{id}
+POST   /api/jobs/{id}/apply
+GET    /api/candidate/applications
+GET    /api/company/jobs/{id}/applications
+PATCH  /api/company/applications/{id}/accept
+PATCH  /api/company/applications/{id}/reject
+```
+
+Remaining:
+
+```txt
 Admin user management APIs
+Upload CV file instead of cvUrl string
+Dashboard/statistics APIs
 ```
 
 ## Frontend Progress
 
-### FE 1 - Setup UI base: Starter only
+### FE 1-5 - Vue frontend recruitment workspace: In progress
 
 Current status:
 
 ```txt
 Vite + Vue 3 + TypeScript project exists in Fe-App
-Default App.vue renders HelloWorld component
-Assets exist: hero.png, vite.svg, vue.svg
-No auth/job/company/admin screens yet
-No router, Axios client, TanStack Query, React Hook Form, or Zod yet
+Recruitment landing/workspace replaces default HelloWorld
+Auth login/register modal connects to backend JWT APIs
+Public approved job list connects to backend PageResponse API
+Public job search/filter/pagination UI supports keyword, location, jobType, page, and size
+Candidate apply UI connects to POST /api/jobs/{id}/apply
+Candidate application history connects to GET /api/candidate/applications
+Company profile and job CRUD UI connects to backend APIs
+Company application review UI connects to company application accept/reject APIs
+Admin pending job approval UI connects to admin job approval APIs
+Loading overlay and toast notifications exist for success/error/info feedback
+Company job form validates salaryMin <= salaryMax before submitting
 ```
 
 Validation status:
 
 ```txt
-Frontend build: PASS on 2026-05-23
+Frontend build: PASS on 2026-05-24
 Command: npm run build
 ```
 
 Decision needed:
 
 ```txt
-Option 1: Continue frontend with Vue and update FE plan accordingly.
-Option 2: Recreate frontend as React TypeScript to match the original plan.
+Continue frontend with Vue because current source is already implemented in Vue 3 + TypeScript.
 ```
 
 ## Validation Status
 
 ```txt
-Frontend build: PASS
-Backend test/build: PASS on 2026-05-23
+Frontend build: PASS on 2026-05-24
+Backend test/build: PASS on 2026-05-24
 Backend command: cmd /c mvnw.cmd test
-Manual API test: pending
-MySQL/DBeaver connection: pending local confirmation
-Git status: 4 modified files after this update
+Manual API test: core recruitment flow done in Postman
+MySQL/DBeaver connection: confirmed by manual API tests
+Postman collection: postman/job-management-api.postman_collection.json
 ```
 
 ## Next Backend Steps
 
 ```txt
-1. Manually test POST /api/auth/register with MySQL/DBeaver.
-2. Manually test POST /api/auth/login and copy accessToken.
-3. Use Swagger Authorize to call GET /api/auth/me.
-4. Manually test POST/GET/PUT /api/company/profile with a COMPANY token.
-5. Add JobStatus, JobType, Job entity, and JobRepository.
-6. Build company job CRUD APIs.
-7. Build public approved job list/detail APIs.
+1. Commit backend changes separately from unrelated frontend work.
+2. Add admin user management APIs.
+3. Add CV upload support.
+4. Add dashboard/statistics APIs.
+5. Add focused service/controller tests beyond contextLoads.
 ```
 
 ## Next Frontend Steps
 
 ```txt
-1. Decide Vue vs React direction.
-2. If Vue: add Vue Router, Axios client, auth store, login/register pages.
-3. If React: recreate Fe-App using Vite React TypeScript and then add router/API/auth flow.
-4. Connect login/register to backend Auth APIs.
+1. Add real CV upload UI after backend upload endpoint exists.
+2. Replace local admin user management demo with real admin user APIs.
+3. Add route-level pages if the single-page workspace becomes too dense.
+4. Add focused frontend tests for repositories and form validation.
 ```
