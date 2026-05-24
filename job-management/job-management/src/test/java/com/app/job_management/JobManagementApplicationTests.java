@@ -5,6 +5,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.app.job_management.repository.CompanyRepository;
+import com.app.job_management.repository.JobApplicationRepository;
 import com.app.job_management.repository.JobRepository;
 import com.app.job_management.repository.UserRepository;
 
@@ -23,6 +24,9 @@ class JobManagementApplicationTests {
 
 	@MockitoBean
 	JobRepository jobRepository;
+
+	@MockitoBean
+	JobApplicationRepository jobApplicationRepository;
 
 	@Test
 	void contextLoads() {
