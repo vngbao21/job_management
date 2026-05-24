@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
+import RecruitmentPage from './presentation/pages/RecruitmentPage.vue'
 </script>
 
 <template>
-  <HelloWorld />
+  <RecruitmentPage />
 </template>
