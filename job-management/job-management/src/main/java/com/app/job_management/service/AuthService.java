@@ -10,6 +10,7 @@ import com.app.job_management.dto.response.LoginResponse;
 import com.app.job_management.dto.response.UserResponse;
 import com.app.job_management.exception.ApiException;
 import com.app.job_management.repository.UserRepository;
+import com.app.job_management.entity.Role;
 import com.app.job_management.entity.User;
 import com.app.job_management.security.JwtService;
 
@@ -26,6 +27,10 @@ public class AuthService {
     }
 
     public UserResponse register(RegisterRequest request) {
+        if (request.role() == Role.ADMIN) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Admin registration is not allowed");
+        }
+
         if (userRepository.existsByEmail(request.email())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Email already exists");
         }
