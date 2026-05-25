@@ -616,6 +616,7 @@ PATCH  /api/company/applications/{id}/reject
 ### Candidate API
 
 ```txt
+POST /api/files/cv
 POST /api/jobs/{id}/apply
 GET  /api/candidate/applications
 GET  /api/candidate/applications/{id}
@@ -630,6 +631,8 @@ PATCH /api/admin/jobs/{id}/reject
 GET   /api/admin/users
 PATCH /api/admin/users/{id}/active
 PATCH /api/admin/users/{id}/inactive
+GET   /api/admin/dashboard
+GET   /api/company/dashboard
 ```
 
 ---
@@ -972,7 +975,7 @@ Deploy production
 
 # PROJECT PROGRESS
 
-Last updated: 2026-05-24
+Last updated: 2026-05-25
 
 ## Collaboration Rule
 
@@ -1174,6 +1177,12 @@ Postman collection for current API set
 Public job search/filter/pagination
 Salary range validation on job create/update
 Better API error handling for invalid JSON, enum/query param errors, unsupported media type, and database constraint violations
+Admin user management APIs
+Upload CV file API
+Serve uploaded CV files from /uploads/cv/**
+Admin dashboard statistics API
+Company dashboard statistics API
+Focused service tests for core business rules
 ```
 
 Current job APIs:
@@ -1190,18 +1199,20 @@ PATCH  /api/admin/jobs/{id}/reject
 GET    /api/jobs?keyword=java&location=Ho Chi Minh&jobType=FULL_TIME&page=0&size=10
 GET    /api/jobs/{id}
 POST   /api/jobs/{id}/apply
+POST   /api/files/cv
 GET    /api/candidate/applications
 GET    /api/company/jobs/{id}/applications
 PATCH  /api/company/applications/{id}/accept
 PATCH  /api/company/applications/{id}/reject
+GET    /api/admin/dashboard
+GET    /api/company/dashboard
 ```
 
 Remaining:
 
 ```txt
-Admin user management APIs
-Upload CV file instead of cvUrl string
-Dashboard/statistics APIs
+Controller integration tests for main API flows
+Production deployment polish
 ```
 
 ## Frontend Progress
@@ -1242,28 +1253,32 @@ Continue frontend with Vue because current source is already implemented in Vue 
 
 ```txt
 Frontend build: PASS on 2026-05-24
-Backend test/build: PASS on 2026-05-24
+Backend test/build: PASS on 2026-05-25
 Backend command: cmd /c mvnw.cmd test
+Backend service tests: AuthService, ApplicationService, AdminUserService, FileStorageService
 Manual API test: core recruitment flow done in Postman
 MySQL/DBeaver connection: confirmed by manual API tests
 Postman collection: postman/job-management-api.postman_collection.json
+Docker compose: docker-compose.yml added for MySQL + backend
+README: updated with local run, Docker run, API summary, Postman flow, and tests
 ```
 
 ## Next Backend Steps
 
 ```txt
 1. Commit backend changes separately from unrelated frontend work.
-2. Add admin user management APIs.
-3. Add CV upload support.
-4. Add dashboard/statistics APIs.
-5. Add focused service/controller tests beyond contextLoads.
+2. Add controller integration tests for important APIs.
+3. Decide whether CV files should stay local or move to cloud storage for production.
+4. Add optional company management APIs for Admin.
+5. Prepare deployment profile and production security settings.
 ```
 
 ## Next Frontend Steps
 
 ```txt
-1. Add real CV upload UI after backend upload endpoint exists.
+1. Connect real CV upload UI to POST /api/files/cv.
 2. Replace local admin user management demo with real admin user APIs.
-3. Add route-level pages if the single-page workspace becomes too dense.
-4. Add focused frontend tests for repositories and form validation.
+3. Connect dashboard UI to GET /api/admin/dashboard and GET /api/company/dashboard.
+4. Add route-level pages if the single-page workspace becomes too dense.
+5. Add focused frontend tests for repositories and form validation.
 ```

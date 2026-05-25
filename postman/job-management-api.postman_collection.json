@@ -29,6 +29,14 @@
     {
       "key": "applicationId",
       "value": "1"
+    },
+    {
+      "key": "userId",
+      "value": "1"
+    },
+    {
+      "key": "cvUrl",
+      "value": "/uploads/cv/example.pdf"
     }
   ],
   "item": [
@@ -58,7 +66,25 @@
       "name": "Auth",
       "item": [
         {
-          "name": "Register Admin",
+          "name": "Register Admin - Blocked",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Register ADMIN is blocked with 400', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test('Response explains admin registration is not allowed', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.success).to.eql(false);",
+                  "  pm.expect(json.message).to.include('Admin registration is not allowed');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -145,6 +171,9 @@
               "listen": "test",
               "script": {
                 "exec": [
+                  "pm.test('Login admin succeeds with 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
                   "const json = pm.response.json();",
                   "if (json.data && json.data.accessToken) {",
                   "  pm.collectionVariables.set('adminToken', json.data.accessToken);",
@@ -593,6 +622,140 @@
       ]
     },
     {
+      "name": "Admin Users",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{adminToken}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Get Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Activate User",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users/{{userId}}/active",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users",
+                "{{userId}}",
+                "active"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Deactivate User",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users/{{userId}}/inactive",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users",
+                "{{userId}}",
+                "inactive"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Admin Dashboard",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/dashboard",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "dashboard"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Company Dashboard",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{companyToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/company/dashboard",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "company",
+                "dashboard"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "Public Jobs",
       "item": [
         {
@@ -655,6 +818,63 @@
       ]
     },
     {
+      "name": "File Upload",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{candidateToken}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Upload CV",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.url) {",
+                  "  pm.collectionVariables.set('cvUrl', json.data.url);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/files/cv",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "files",
+                "cv"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "Candidate Applications",
       "auth": {
         "type": "bearer",
@@ -693,7 +913,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"cvUrl\": \"https://example.com/cv.pdf\",\n  \"coverLetter\": \"I am interested in this position.\"\n}"
+              "raw": "{\n  \"cvUrl\": \"{{cvUrl}}\",\n  \"coverLetter\": \"I am interested in this position.\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/jobs/{{jobId}}/apply",
