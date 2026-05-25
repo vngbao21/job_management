@@ -40,7 +40,7 @@ defineEmits<{
           <p>{{ application.coverLetter }}</p>
           <div class="job-meta">
             <span>{{ application.status }}</span>
-            <span>{{ application.cvName }}</span>
+            <span>{{ application.cvUrl || 'No CV URL' }}</span>
             <span>{{ new Date(application.createdAt).toLocaleDateString() }}</span>
           </div>
         </div>

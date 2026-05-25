@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { JobApplication } from '../../domain/entities/application'
 import type { CompanyProfilePayload } from '../../domain/entities/company'
+import type { CompanyDashboard } from '../../domain/entities/dashboard'
 import type { Job, JobType } from '../../domain/entities/job'
 import type { User } from '../../domain/entities/user'
 import AdminPanel from './AdminPanel.vue'
@@ -9,8 +10,10 @@ import CompanyPanel from './CompanyPanel.vue'
 
 defineProps<{
   adminPendingJobs: Job[]
+  adminUsers: User[]
   candidateApplications: JobApplication[]
   companyApplications: JobApplication[]
+  companyDashboard: CompanyDashboard | null
   companyJobForm: {
     editingJobId: number | null
     title: string
@@ -29,9 +32,9 @@ defineProps<{
     pendingJobs: number
     applications: number
     activeUsers: number
+    totalUsers: number
   }
   loading: boolean
-  managedUsers: User[]
   message: string
 }>()
 
@@ -41,13 +44,14 @@ defineEmits<{
   editCompanyJob: [job: Job]
   refreshRoleData: []
   rejectJob: [id: number]
+  refreshAdminUsers: []
   refreshCandidateApplications: []
   refreshCompanyApplications: []
   resetCompanyJobForm: []
   reviewApplication: [id: number, status: 'ACCEPTED' | 'REJECTED']
   saveCompanyJob: []
   saveCompanyProfile: []
-  toggleUserStatus: [id: number]
+  toggleUserStatus: [user: User]
 }>()
 </script>
 
@@ -62,11 +66,12 @@ defineEmits<{
       v-if="currentUser.role === 'ADMIN'"
       :dashboard-stats="dashboardStats"
       :loading="loading"
-      :managed-users="managedUsers"
       :message="message"
       :pending-jobs="adminPendingJobs"
+      :users="adminUsers"
       @approve="$emit('approveJob', $event)"
       @refresh="$emit('refreshRoleData')"
+      @refresh-users="$emit('refreshAdminUsers')"
       @reject="$emit('rejectJob', $event)"
       @toggle-user-status="$emit('toggleUserStatus', $event)"
     />
@@ -77,6 +82,7 @@ defineEmits<{
       :company-job-form="companyJobForm"
       :company-jobs="companyJobs"
       :company-profile-form="companyProfileForm"
+      :dashboard="companyDashboard"
       :loading="loading"
       :message="message"
       @delete-job="$emit('deleteCompanyJob', $event)"

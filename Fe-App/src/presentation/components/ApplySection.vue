@@ -8,13 +8,13 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  cvChange: [fileName: string]
+  cvChange: [file: File | null]
   submitApplication: []
 }>()
 
 function handleCvInput(event: Event) {
   const input = event.target as HTMLInputElement
-  emit('cvChange', input.files?.[0]?.name || '')
+  emit('cvChange', input.files?.[0] || null)
 }
 </script>
 
@@ -24,8 +24,7 @@ function handleCvInput(event: Event) {
       <p class="eyebrow">Candidate application</p>
       <h2>Apply CV for the selected job</h2>
       <p>
-        Send a cover letter and CV reference to the backend application API. Your application
-        history updates after the request succeeds.
+        Upload a PDF, DOC, or DOCX CV, then send the application to the company for review.
       </p>
     </div>
 
@@ -45,7 +44,7 @@ function handleCvInput(event: Event) {
       <label>
         CV file
         <input accept=".pdf,.doc,.docx" required type="file" @change="handleCvInput" />
-        <small v-if="applicationForm.cvName">{{ applicationForm.cvName }}</small>
+        <small v-if="applicationForm.cvFileName">{{ applicationForm.cvFileName }}</small>
       </label>
       <label class="wide">
         Cover letter

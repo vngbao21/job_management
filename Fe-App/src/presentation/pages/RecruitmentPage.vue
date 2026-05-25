@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useRecruitmentPage } from '../../application/useRecruitmentPage'
 import AppHeader from '../components/AppHeader.vue'
 import ApplySection from '../components/ApplySection.vue'
@@ -13,6 +15,18 @@ import RoleDashboard from '../components/RoleDashboard.vue'
 import ToastHost from '../components/ToastHost.vue'
 
 const page = useRecruitmentPage()
+const route = useRoute()
+
+const section = computed(() => route.meta.section || 'jobs')
+const showJobs = computed(() => section.value === 'jobs' || section.value === 'candidate')
+const showCandidate = computed(() => section.value === 'candidate')
+const showRoleDashboard = computed(() => section.value === 'candidate' || section.value === 'company' || section.value === 'admin')
+
+onMounted(() => {
+  if (route.query.auth === 'login') {
+    page.requestAuth('Sign in to continue.')
+  }
+})
 </script>
 
 <template>
@@ -23,14 +37,16 @@ const page = useRecruitmentPage()
       @login="page.requestAuth()"
       @logout="page.logout"
     />
-    <HeroSection :job-count="page.jobs.value.length" />
+    <HeroSection v-if="section === 'jobs'" :job-count="page.jobs.value.length" />
     <JobSearchBar
+      v-if="showJobs"
       :filters="page.filters"
-      :loading="page.roleActionLoading.value"
+      :loading="page.jobLoading.value"
       @reset="page.resetJobSearch"
       @search="page.searchJobs"
     />
     <JobWorkspace
+      v-if="showJobs"
       :filtered-jobs="page.filteredJobs.value"
       :salary-text="page.salaryText.value"
       :selected-job="page.selectedJob.value"
@@ -38,6 +54,7 @@ const page = useRecruitmentPage()
       @select-job="page.selectJob"
     />
     <JobPagination
+      v-if="showJobs"
       :last="page.jobPage.last"
       :page="page.jobPage.page"
       :size="page.jobPage.size"
@@ -46,20 +63,23 @@ const page = useRecruitmentPage()
       @change-page="page.changeJobPage"
     />
     <RoleDashboard
+      v-if="showRoleDashboard"
       :admin-pending-jobs="page.adminPendingJobs.value"
+      :admin-users="page.adminUsers.value"
       :candidate-applications="page.candidateApplications.value"
       :company-applications="page.companyApplications.value"
+      :company-dashboard="page.companyDashboard.value"
       :company-job-form="page.companyJobForm"
       :company-jobs="page.companyJobs.value"
       :company-profile-form="page.companyProfileForm"
       :current-user="page.currentUser.value"
       :dashboard-stats="page.dashboardStats.value"
       :loading="page.roleActionLoading.value"
-      :managed-users="page.managedUsers.value"
       :message="page.roleActionMessage.value"
       @approve-job="page.approveJob"
       @delete-company-job="page.deleteCompanyJob"
       @edit-company-job="page.editCompanyJob"
+      @refresh-admin-users="page.loadAdminUsers"
       @refresh-candidate-applications="page.loadCandidateApplications"
       @refresh-company-applications="page.loadCompanyApplications"
       @refresh-role-data="page.loadRoleData"
@@ -71,6 +91,7 @@ const page = useRecruitmentPage()
       @toggle-user-status="page.toggleUserStatus"
     />
     <ApplySection
+      v-if="showCandidate"
       :application-form="page.applicationForm"
       :selected-job="page.selectedJob.value"
       @cv-change="page.handleCvChange"

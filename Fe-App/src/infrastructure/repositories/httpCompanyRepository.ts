@@ -7,6 +7,9 @@ import { mapJobResponse, type JobResponse } from './jobMapper'
 
 export function createHttpCompanyRepository(): CompanyRepository {
   return {
+    getDashboard(accessToken: string) {
+      return requestApi(apiConfig.paths.companyDashboard, auth(accessToken))
+    },
     getProfile(accessToken: string) {
       return requestApi<CompanyProfile>(apiConfig.paths.companyProfile, auth(accessToken))
     },

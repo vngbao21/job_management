@@ -29,18 +29,9 @@ export function mapApplicationResponse(response: ApplicationResponse): JobApplic
     candidateName: response.candidateName,
     candidateEmail: response.candidateEmail,
     cvUrl,
-    cvName: getFileName(cvUrl),
     coverLetter: response.coverLetter || '',
     status: response.status,
     createdAt: response.createdAt,
     updatedAt: response.updatedAt,
   }
-}
-
-function getFileName(cvUrl: string) {
-  if (!cvUrl) {
-    return 'No CV attached'
-  }
-
-  return cvUrl.split(/[\\/]/).pop() || cvUrl
 }

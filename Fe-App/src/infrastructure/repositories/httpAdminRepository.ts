@@ -5,6 +5,9 @@ import { mapJobResponse, type JobResponse } from './jobMapper'
 
 export function createHttpAdminRepository(): AdminRepository {
   return {
+    getDashboard(accessToken: string) {
+      return requestApi(apiConfig.paths.adminDashboard, auth(accessToken))
+    },
     async getPendingJobs(accessToken: string) {
       const jobs = await requestApi<JobResponse[]>(apiConfig.paths.adminPendingJobs, auth(accessToken))
       return jobs.map(mapJobResponse)
@@ -22,6 +25,21 @@ export function createHttpAdminRepository(): AdminRepository {
         method: 'PATCH',
       })
       return mapJobResponse(job)
+    },
+    getUsers(accessToken: string) {
+      return requestApi(apiConfig.paths.adminUsers, auth(accessToken))
+    },
+    activateUser(accessToken: string, id: number) {
+      return requestApi(endpoint(apiConfig.paths.adminActivateUser, { id }), {
+        ...auth(accessToken),
+        method: 'PATCH',
+      })
+    },
+    deactivateUser(accessToken: string, id: number) {
+      return requestApi(endpoint(apiConfig.paths.adminDeactivateUser, { id }), {
+        ...auth(accessToken),
+        method: 'PATCH',
+      })
     },
   }
 }

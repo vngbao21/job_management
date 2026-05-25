@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import type { JobApplication } from '../../domain/entities/application'
 import type { CompanyProfilePayload } from '../../domain/entities/company'
+import type { CompanyDashboard } from '../../domain/entities/dashboard'
 import type { Job, JobType } from '../../domain/entities/job'
 
 defineProps<{
   applications: JobApplication[]
+  dashboard: CompanyDashboard | null
   companyJobForm: {
     editingJobId: number | null
     title: string
@@ -42,6 +44,13 @@ defineEmits<{
     </div>
 
     <p v-if="message" class="form-message">{{ message }}</p>
+
+    <div v-if="dashboard" class="admin-stats">
+      <div><strong>{{ dashboard.totalJobs }}</strong><span>Total jobs</span></div>
+      <div><strong>{{ dashboard.pendingJobs }}</strong><span>Pending jobs</span></div>
+      <div><strong>{{ dashboard.approvedJobs }}</strong><span>Approved jobs</span></div>
+      <div><strong>{{ dashboard.totalApplications }}</strong><span>Applications</span></div>
+    </div>
 
     <div class="role-grid">
       <form class="manager-form" @submit.prevent="$emit('saveProfile')">
@@ -151,7 +160,7 @@ defineEmits<{
           <p>{{ application.coverLetter }}</p>
           <div class="job-meta">
             <span>{{ application.candidateEmail }}</span>
-            <span>{{ application.cvName }}</span>
+            <span>{{ application.cvUrl || 'No CV URL' }}</span>
             <span>{{ application.status }}</span>
           </div>
         </div>

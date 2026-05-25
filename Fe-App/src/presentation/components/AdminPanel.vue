@@ -8,18 +8,20 @@ defineProps<{
     pendingJobs: number
     applications: number
     activeUsers: number
+    totalUsers: number
   }
   loading: boolean
-  managedUsers: User[]
   message: string
   pendingJobs: Job[]
+  users: User[]
 }>()
 
 defineEmits<{
   approve: [id: number]
   reject: [id: number]
   refresh: []
-  toggleUserStatus: [id: number]
+  refreshUsers: []
+  toggleUserStatus: [user: User]
 }>()
 </script>
 
@@ -69,8 +71,12 @@ defineEmits<{
 
     <div class="role-panel-head compact">
       <h3>User management</h3>
+      <button class="ghost-button small" type="button" :disabled="loading" @click="$emit('refreshUsers')">
+        Refresh
+      </button>
     </div>
-    <article v-for="user in managedUsers" :key="user.id" class="action-card">
+    <div v-if="users.length === 0" class="empty-state">No users found.</div>
+    <article v-for="user in users" :key="user.id" class="action-card">
       <div>
         <span class="company-name">{{ user.role }}</span>
         <h3>{{ user.fullName }}</h3>
@@ -81,10 +87,11 @@ defineEmits<{
         </div>
       </div>
       <div class="action-row">
-        <button class="ghost-button" type="button" :disabled="loading" @click="$emit('toggleUserStatus', user.id)">
+        <button class="ghost-button" type="button" :disabled="loading" @click="$emit('toggleUserStatus', user)">
           {{ user.status === 'ACTIVE' ? 'Deactivate' : 'Activate' }}
         </button>
       </div>
     </article>
+
   </section>
 </template>

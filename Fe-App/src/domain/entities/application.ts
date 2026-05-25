@@ -3,7 +3,8 @@ export interface CandidateApplicationForm {
   email: string
   phone: string
   coverLetter: string
-  cvName: string
+  cvUrl: string
+  cvFileName: string
 }
 
 export type ApplicationStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED'
@@ -19,7 +20,6 @@ export interface JobApplication {
   candidateEmail: string
   candidatePhone?: string
   cvUrl: string
-  cvName: string
   coverLetter: string
   status: ApplicationStatus
   createdAt: string

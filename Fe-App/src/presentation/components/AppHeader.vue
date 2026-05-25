@@ -14,14 +14,15 @@ defineEmits<{
 
 <template>
   <header class="topbar">
-    <a class="brand" href="#jobs" aria-label="JobPilot home">
+    <RouterLink class="brand" to="/jobs" aria-label="JobPilot home">
       <span class="brand-mark">JP</span>
       <span>JobPilot</span>
-    </a>
+    </RouterLink>
     <nav class="nav-links" aria-label="Main navigation">
-      <a href="#jobs">Jobs</a>
-      <a href="#dashboard">Dashboard</a>
-      <a href="#apply">Apply</a>
+      <RouterLink to="/jobs">Jobs</RouterLink>
+      <RouterLink v-if="currentUser?.role === 'CANDIDATE'" to="/candidate">Candidate</RouterLink>
+      <RouterLink v-if="currentUser?.role === 'COMPANY'" to="/company">Company</RouterLink>
+      <RouterLink v-if="currentUser?.role === 'ADMIN'" to="/admin">Admin</RouterLink>
     </nav>
     <div class="account-actions">
       <div v-if="currentUser" class="account-card" :title="apiStatus">

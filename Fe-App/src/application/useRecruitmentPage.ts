@@ -1,12 +1,15 @@
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import type { ApplicationStatus, CandidateApplicationForm, JobApplication } from '../domain/entities/application'
 import type { CompanyProfile, CompanyProfilePayload } from '../domain/entities/company'
+import type { AdminDashboard, CompanyDashboard } from '../domain/entities/dashboard'
 import type { Job, JobFilters, JobPage, JobType } from '../domain/entities/job'
 import type { Role, User } from '../domain/entities/user'
 import type { ApplicationRepository } from '../domain/repositories/applicationRepository'
 import type { AdminRepository } from '../domain/repositories/adminRepository'
 import type { AuthRepository } from '../domain/repositories/authRepository'
 import type { CompanyRepository } from '../domain/repositories/companyRepository'
+import type { FileRepository } from '../domain/repositories/fileRepository'
 import type { HealthRepository } from '../domain/repositories/healthRepository'
 import type { JobRepository } from '../domain/repositories/jobRepository'
 import { demoJobs } from '../infrastructure/data/demoJobs'
@@ -14,6 +17,7 @@ import { createHttpApplicationRepository } from '../infrastructure/repositories/
 import { createHttpAdminRepository } from '../infrastructure/repositories/httpAdminRepository'
 import { createHttpAuthRepository } from '../infrastructure/repositories/httpAuthRepository'
 import { createHttpCompanyRepository } from '../infrastructure/repositories/httpCompanyRepository'
+import { createHttpFileRepository } from '../infrastructure/repositories/httpFileRepository'
 import { createHttpHealthRepository } from '../infrastructure/repositories/httpHealthRepository'
 import { createHttpJobRepository } from '../infrastructure/repositories/httpJobRepository'
 import { tokenStorage } from '../infrastructure/storage/tokenStorage'
@@ -33,15 +37,18 @@ interface Dependencies {
   adminRepository?: AdminRepository
   authRepository?: AuthRepository
   companyRepository?: CompanyRepository
+  fileRepository?: FileRepository
   healthRepository?: HealthRepository
   jobRepository?: JobRepository
 }
 
 export function useRecruitmentPage(dependencies: Dependencies = {}) {
+  const router = useRouter()
   const applicationRepository = dependencies.applicationRepository ?? createHttpApplicationRepository()
   const adminRepository = dependencies.adminRepository ?? createHttpAdminRepository()
   const authRepository = dependencies.authRepository ?? createHttpAuthRepository()
   const companyRepository = dependencies.companyRepository ?? createHttpCompanyRepository()
+  const fileRepository = dependencies.fileRepository ?? createHttpFileRepository()
   const healthRepository = dependencies.healthRepository ?? createHttpHealthRepository()
   const jobRepository = dependencies.jobRepository ?? createHttpJobRepository()
 
@@ -55,41 +62,20 @@ export function useRecruitmentPage(dependencies: Dependencies = {}) {
   const authMessageType = ref<'success' | 'error' | 'info'>('info')
   const currentUser = ref<User | null>(null)
   const initialLoading = ref(true)
+  const jobLoading = ref(false)
   const roleActionLoading = ref(false)
   const roleActionMessage = ref('')
   const toast = ref<ToastState | null>(null)
   const token = ref(tokenStorage.get())
+  const adminDashboard = ref<AdminDashboard | null>(null)
   const adminPendingJobs = ref<Job[]>([])
+  const adminUsers = ref<User[]>([])
+  const companyDashboard = ref<CompanyDashboard | null>(null)
   const companyProfile = ref<CompanyProfile | null>(null)
   const companyJobs = ref<Job[]>([])
   const candidateApplications = ref<JobApplication[]>([])
   const companyApplications = ref<JobApplication[]>([])
-  const managedUsers = ref<User[]>([
-    {
-      id: 1,
-      email: 'admin@example.com',
-      fullName: 'Admin Demo',
-      phone: '0900000001',
-      role: 'ADMIN',
-      status: 'ACTIVE',
-    },
-    {
-      id: 2,
-      email: 'company@example.com',
-      fullName: 'Company Demo',
-      phone: '0900000002',
-      role: 'COMPANY',
-      status: 'ACTIVE',
-    },
-    {
-      id: 3,
-      email: 'candidate@example.com',
-      fullName: 'Candidate Demo',
-      phone: '0900000003',
-      role: 'CANDIDATE',
-      status: 'ACTIVE',
-    },
-  ])
+  const selectedCvFile = ref<File | null>(null)
 
   const filters = reactive<JobFilters>({
     keyword: '',
@@ -120,7 +106,8 @@ export function useRecruitmentPage(dependencies: Dependencies = {}) {
     phone: '',
     coverLetter:
       'I have built Spring Boot APIs with JWT, JPA, and MySQL. I want to contribute to your recruitment product and can share my portfolio during the interview.',
-    cvName: '',
+    cvUrl: '',
+    cvFileName: '',
   })
 
   const companyProfileForm = reactive<CompanyProfilePayload>({
@@ -144,10 +131,14 @@ export function useRecruitmentPage(dependencies: Dependencies = {}) {
   const selectedJob = computed(() => jobs.value.find((job) => job.id === selectedJobId.value) || jobs.value[0] || null)
   const salaryText = computed(() => formatSalary(selectedJob.value))
   const filteredJobs = computed(() => jobs.value)
-  const globalLoading = computed(() => initialLoading.value || authLoading.value || roleActionLoading.value)
+  const globalLoading = computed(() => initialLoading.value || authLoading.value || jobLoading.value || roleActionLoading.value)
   const globalLoadingText = computed(() => {
     if (authLoading.value) {
       return authMode.value === 'login' ? 'Signing in...' : 'Creating account...'
+    }
+
+    if (jobLoading.value) {
+      return 'Loading jobs...'
     }
 
     if (roleActionLoading.value) {
@@ -157,10 +148,12 @@ export function useRecruitmentPage(dependencies: Dependencies = {}) {
     return 'Loading workspace...'
   })
   const dashboardStats = computed(() => ({
-    approvedJobs: jobs.value.filter((job) => job.status === 'APPROVED').length,
-    pendingJobs: adminPendingJobs.value.length,
-    applications: candidateApplications.value.length + companyApplications.value.length,
-    activeUsers: managedUsers.value.filter((user) => user.status === 'ACTIVE').length,
+    approvedJobs: adminDashboard.value?.approvedJobs ?? jobs.value.filter((job) => job.status === 'APPROVED').length,
+    pendingJobs: adminDashboard.value?.pendingJobs ?? adminPendingJobs.value.length,
+    applications:
+      adminDashboard.value?.totalApplications ?? candidateApplications.value.length + companyApplications.value.length,
+    activeUsers: adminDashboard.value?.activeUsers ?? 0,
+    totalUsers: adminDashboard.value?.totalUsers ?? 0,
   }))
 
   onMounted(async () => {
@@ -228,11 +221,11 @@ export function useRecruitmentPage(dependencies: Dependencies = {}) {
   }
 
   async function searchJobs() {
-    roleActionLoading.value = true
+    jobLoading.value = true
     try {
       await loadApprovedJobs(0)
     } finally {
-      roleActionLoading.value = false
+      jobLoading.value = false
     }
   }
 
@@ -241,11 +234,11 @@ export function useRecruitmentPage(dependencies: Dependencies = {}) {
       return
     }
 
-    roleActionLoading.value = true
+    jobLoading.value = true
     try {
       await loadApprovedJobs(page)
     } finally {
-      roleActionLoading.value = false
+      jobLoading.value = false
     }
   }
 
@@ -281,8 +274,10 @@ export function useRecruitmentPage(dependencies: Dependencies = {}) {
 
         token.value = login.accessToken
         tokenStorage.set(login.accessToken)
+        tokenStorage.setUser(login.user)
         setCurrentUser(login.user)
         authOpen.value = false
+        void routeAfterLogin(login.user.role)
         notify('success', 'Login successful', `Welcome back, ${login.user.fullName}.`)
       } else {
         await authRepository.register({
@@ -308,6 +303,7 @@ export function useRecruitmentPage(dependencies: Dependencies = {}) {
 
   function setCurrentUser(user: User) {
     currentUser.value = user
+    tokenStorage.setUser(user)
     applicationForm.fullName = user.fullName
     applicationForm.email = user.email
     applicationForm.phone = user.phone || ''
@@ -318,18 +314,18 @@ export function useRecruitmentPage(dependencies: Dependencies = {}) {
     token.value = ''
     currentUser.value = null
     adminPendingJobs.value = []
+    adminDashboard.value = null
+    adminUsers.value = []
+    companyDashboard.value = null
     companyJobs.value = []
     companyProfile.value = null
     tokenStorage.clear()
     notify('info', 'Signed out', 'Your local session has been cleared.')
+    void router.push('/jobs')
   }
 
   function selectJob(id: number) {
     selectedJobId.value = id
-  }
-
-  function handleCvChange(fileName: string) {
-    applicationForm.cvName = fileName
   }
 
   function requestAuth(message = '') {
@@ -371,13 +367,21 @@ export function useRecruitmentPage(dependencies: Dependencies = {}) {
       return
     }
 
+    if (!selectedCvFile.value) {
+      roleActionMessage.value = 'Upload a PDF, DOC, or DOCX CV before applying.'
+      notify('error', 'CV file required', roleActionMessage.value)
+      return
+    }
+
     roleActionLoading.value = true
     try {
-      const application = await applicationRepository.applyJob(token.value, selectedJob.value.id, {
-        cvUrl: applicationForm.cvName,
+      const uploadedCv = await fileRepository.uploadCv(token.value, selectedCvFile.value)
+      applicationForm.cvUrl = uploadedCv.url
+      await applicationRepository.applyJob(token.value, selectedJob.value.id, {
+        cvUrl: applicationForm.cvUrl,
         coverLetter: applicationForm.coverLetter,
       })
-      candidateApplications.value = [application, ...candidateApplications.value]
+      await loadCandidateApplications({ showLoading: false })
       roleActionMessage.value = 'Application submitted. It is pending company review.'
       notify('success', 'Application submitted', 'Your application was sent to the company.')
     } catch (error) {
@@ -400,11 +404,11 @@ export function useRecruitmentPage(dependencies: Dependencies = {}) {
 
     roleActionMessage.value = ''
     if (currentUser.value.role === 'ADMIN') {
-      await loadAdminPendingJobs()
+      await Promise.all([loadAdminDashboard(), loadAdminPendingJobs(), loadAdminUsers()])
     }
 
     if (currentUser.value.role === 'COMPANY') {
-      await Promise.all([loadCompanyProfile(), loadCompanyJobs()])
+      await Promise.all([loadCompanyDashboard(), loadCompanyProfile(), loadCompanyJobs()])
       await loadCompanyApplications()
     }
 
@@ -413,12 +417,15 @@ export function useRecruitmentPage(dependencies: Dependencies = {}) {
     }
   }
 
-  async function loadAdminPendingJobs() {
+  async function loadAdminPendingJobs(options: { showLoading?: boolean } = {}) {
     if (!token.value) {
       return
     }
 
-    roleActionLoading.value = true
+    const showLoading = options.showLoading ?? true
+    if (showLoading) {
+      roleActionLoading.value = true
+    }
     try {
       adminPendingJobs.value = await adminRepository.getPendingJobs(token.value)
       roleActionMessage.value = `Loaded ${adminPendingJobs.value.length} pending job(s).`
@@ -427,7 +434,9 @@ export function useRecruitmentPage(dependencies: Dependencies = {}) {
       roleActionMessage.value = getErrorMessage(error)
       notify('error', 'Cannot load pending jobs', roleActionMessage.value)
     } finally {
-      roleActionLoading.value = false
+      if (showLoading) {
+        roleActionLoading.value = false
+      }
     }
   }
 
@@ -454,7 +463,8 @@ export function useRecruitmentPage(dependencies: Dependencies = {}) {
       }
       roleActionMessage.value = action === 'approve' ? 'Job approved successfully.' : 'Job rejected successfully.'
       notify('success', action === 'approve' ? 'Job approved' : 'Job rejected', roleActionMessage.value)
-      await loadAdminPendingJobs()
+      await loadAdminPendingJobs({ showLoading: false })
+      await loadAdminDashboard()
       await loadApprovedJobs()
     } catch (error) {
       roleActionMessage.value = getErrorMessage(error)
@@ -492,6 +502,7 @@ export function useRecruitmentPage(dependencies: Dependencies = {}) {
       companyProfile.value = companyProfile.value
         ? await companyRepository.updateProfile(token.value, companyProfileForm)
         : await companyRepository.createProfile(token.value, companyProfileForm)
+      await loadCompanyDashboard()
       roleActionMessage.value = 'Company profile saved.'
       notify('success', 'Profile saved', 'Company profile changes were saved.')
     } catch (error) {
@@ -515,12 +526,15 @@ export function useRecruitmentPage(dependencies: Dependencies = {}) {
     }
   }
 
-  async function loadCandidateApplications() {
+  async function loadCandidateApplications(options: { showLoading?: boolean } = {}) {
     if (!token.value) {
       return
     }
 
-    roleActionLoading.value = true
+    const showLoading = options.showLoading ?? true
+    if (showLoading) {
+      roleActionLoading.value = true
+    }
     try {
       candidateApplications.value = await applicationRepository.getCandidateApplications(token.value)
       roleActionMessage.value = `Loaded ${candidateApplications.value.length} application(s).`
@@ -528,17 +542,22 @@ export function useRecruitmentPage(dependencies: Dependencies = {}) {
       roleActionMessage.value = getErrorMessage(error)
       notify('error', 'Cannot load applications', roleActionMessage.value)
     } finally {
-      roleActionLoading.value = false
+      if (showLoading) {
+        roleActionLoading.value = false
+      }
     }
   }
 
-  async function loadCompanyApplications() {
+  async function loadCompanyApplications(options: { showLoading?: boolean } = {}) {
     if (!token.value || companyJobs.value.length === 0) {
       companyApplications.value = []
       return
     }
 
-    roleActionLoading.value = true
+    const showLoading = options.showLoading ?? true
+    if (showLoading) {
+      roleActionLoading.value = true
+    }
     try {
       const applicationGroups = await Promise.all(
         companyJobs.value.map((job) => applicationRepository.getCompanyJobApplications(token.value, job.id)),
@@ -549,7 +568,9 @@ export function useRecruitmentPage(dependencies: Dependencies = {}) {
       roleActionMessage.value = getErrorMessage(error)
       notify('error', 'Cannot load candidate applications', roleActionMessage.value)
     } finally {
-      roleActionLoading.value = false
+      if (showLoading) {
+        roleActionLoading.value = false
+      }
     }
   }
 
@@ -589,6 +610,8 @@ export function useRecruitmentPage(dependencies: Dependencies = {}) {
 
       resetCompanyJobForm()
       await loadCompanyJobs()
+      await loadCompanyApplications({ showLoading: false })
+      await loadCompanyDashboard()
     } catch (error) {
       roleActionMessage.value = getErrorMessage(error)
       notify('error', 'Cannot save job', roleActionMessage.value)
@@ -608,6 +631,8 @@ export function useRecruitmentPage(dependencies: Dependencies = {}) {
       roleActionMessage.value = 'Job deleted.'
       notify('success', 'Job deleted', 'The job was removed from your company list.')
       await loadCompanyJobs()
+      await loadCompanyApplications({ showLoading: false })
+      await loadCompanyDashboard()
     } catch (error) {
       roleActionMessage.value = getErrorMessage(error)
       notify('error', 'Cannot delete job', roleActionMessage.value)
@@ -625,9 +650,8 @@ export function useRecruitmentPage(dependencies: Dependencies = {}) {
     roleActionLoading.value = true
     try {
       const updatedApplication = await applicationRepository.reviewApplication(token.value, id, status)
-      companyApplications.value = companyApplications.value.map((application) =>
-        application.id === id ? updatedApplication : application,
-      )
+      await loadCompanyApplications({ showLoading: false })
+      await loadCompanyDashboard()
       candidateApplications.value = candidateApplications.value.map((application) =>
         application.id === id ? updatedApplication : application,
       )
@@ -641,12 +665,83 @@ export function useRecruitmentPage(dependencies: Dependencies = {}) {
     }
   }
 
-  function toggleUserStatus(id: number) {
-    managedUsers.value = managedUsers.value.map((user) =>
-      user.id === id ? { ...user, status: user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE' } : user,
-    )
-    roleActionMessage.value = 'User status updated.'
-    notify('success', 'User updated', roleActionMessage.value)
+  async function toggleUserStatus(user: User) {
+    if (!token.value) {
+      requestAuth('Sign in as admin first.')
+      return
+    }
+
+    roleActionLoading.value = true
+    try {
+      if (user.status === 'ACTIVE') {
+        await adminRepository.deactivateUser(token.value, user.id)
+        roleActionMessage.value = 'User deactivated.'
+      } else {
+        await adminRepository.activateUser(token.value, user.id)
+        roleActionMessage.value = 'User activated.'
+      }
+      await Promise.all([loadAdminUsers(), loadAdminDashboard()])
+      notify('success', 'User updated', roleActionMessage.value)
+    } catch (error) {
+      roleActionMessage.value = getErrorMessage(error)
+      notify('error', 'Cannot update user', roleActionMessage.value)
+    } finally {
+      roleActionLoading.value = false
+    }
+  }
+
+  function handleCvChange(file: File | null) {
+    selectedCvFile.value = file
+    applicationForm.cvFileName = file?.name || ''
+    applicationForm.cvUrl = ''
+  }
+
+  async function loadAdminDashboard() {
+    if (!token.value) {
+      return
+    }
+
+    try {
+      adminDashboard.value = await adminRepository.getDashboard(token.value)
+    } catch (error) {
+      roleActionMessage.value = getErrorMessage(error)
+      notify('error', 'Cannot load admin dashboard', roleActionMessage.value)
+    }
+  }
+
+  async function loadCompanyDashboard() {
+    if (!token.value) {
+      return
+    }
+
+    try {
+      companyDashboard.value = await companyRepository.getDashboard(token.value)
+    } catch (error) {
+      roleActionMessage.value = getErrorMessage(error)
+      notify('error', 'Cannot load company dashboard', roleActionMessage.value)
+    }
+  }
+
+  async function loadAdminUsers(options: { showLoading?: boolean } = {}) {
+    if (!token.value) {
+      return
+    }
+
+    const showLoading = options.showLoading ?? false
+    if (showLoading) {
+      roleActionLoading.value = true
+    }
+
+    try {
+      adminUsers.value = await adminRepository.getUsers(token.value)
+    } catch (error) {
+      roleActionMessage.value = getErrorMessage(error)
+      notify('error', 'Cannot load users', roleActionMessage.value)
+    } finally {
+      if (showLoading) {
+        roleActionLoading.value = false
+      }
+    }
   }
 
   function dismissToast() {
@@ -677,6 +772,7 @@ export function useRecruitmentPage(dependencies: Dependencies = {}) {
 
   return {
     apiStatus,
+    adminDashboard,
     applicationForm,
     authForm,
     authLoading,
@@ -685,8 +781,10 @@ export function useRecruitmentPage(dependencies: Dependencies = {}) {
     authMode,
     authOpen,
     adminPendingJobs,
+    adminUsers,
     candidateApplications,
     companyApplications,
+    companyDashboard,
     companyJobForm,
     companyJobs,
     companyProfile,
@@ -698,6 +796,7 @@ export function useRecruitmentPage(dependencies: Dependencies = {}) {
     globalLoading,
     globalLoadingText,
     initialLoading,
+    jobLoading,
     jobPage,
     jobs,
     roleActionLoading,
@@ -712,6 +811,7 @@ export function useRecruitmentPage(dependencies: Dependencies = {}) {
     dismissToast,
     editCompanyJob,
     handleCvChange,
+    loadAdminUsers,
     loadCandidateApplications,
     loadCompanyApplications,
     loadRoleData,
@@ -729,7 +829,6 @@ export function useRecruitmentPage(dependencies: Dependencies = {}) {
     submitApplication,
     submitAuth,
     toggleUserStatus,
-    managedUsers,
   }
 
   function notify(type: ToastType, title: string, message: string) {
@@ -740,6 +839,20 @@ export function useRecruitmentPage(dependencies: Dependencies = {}) {
         toast.value = null
       }
     }, 3600)
+  }
+
+  async function routeAfterLogin(role: Role) {
+    if (role === 'ADMIN') {
+      await router.push('/admin')
+      return
+    }
+
+    if (role === 'COMPANY') {
+      await router.push('/company')
+      return
+    }
+
+    await router.push('/candidate')
   }
 
 }

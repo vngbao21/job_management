@@ -11,6 +11,12 @@ export const apiConfig = {
     adminPendingJobs: import.meta.env.VITE_ADMIN_PENDING_JOBS_PATH || '/admin/jobs/pending',
     adminApproveJob: import.meta.env.VITE_ADMIN_APPROVE_JOB_PATH || '/admin/jobs/:id/approve',
     adminRejectJob: import.meta.env.VITE_ADMIN_REJECT_JOB_PATH || '/admin/jobs/:id/reject',
+    adminUsers: import.meta.env.VITE_ADMIN_USERS_PATH || '/admin/users',
+    adminActivateUser: import.meta.env.VITE_ADMIN_ACTIVATE_USER_PATH || '/admin/users/:id/active',
+    adminDeactivateUser: import.meta.env.VITE_ADMIN_DEACTIVATE_USER_PATH || '/admin/users/:id/inactive',
+    adminDashboard: import.meta.env.VITE_ADMIN_DASHBOARD_PATH || '/admin/dashboard',
+    companyDashboard: import.meta.env.VITE_COMPANY_DASHBOARD_PATH || '/company/dashboard',
+    uploadCv: import.meta.env.VITE_UPLOAD_CV_PATH || '/files/cv',
     applyJob: import.meta.env.VITE_APPLY_JOB_PATH || '/jobs/:id/apply',
     candidateApplications: import.meta.env.VITE_CANDIDATE_APPLICATIONS_PATH || '/candidate/applications',
     companyJobApplications:
