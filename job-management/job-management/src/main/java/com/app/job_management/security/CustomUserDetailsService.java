@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 
 import com.app.job_management.repository.UserRepository;
 import com.app.job_management.entity.User;
+import com.app.job_management.entity.UserStatus;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -24,6 +25,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         return org.springframework.security.core.userdetails.User
                 .withUsername(user.getEmail())
                 .password(user.getPassword())
+                .disabled(user.getStatus() != UserStatus.ACTIVE)
                 .roles(user.getRole().name())
                 .build();
     }

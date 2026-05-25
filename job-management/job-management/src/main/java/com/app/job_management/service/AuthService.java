@@ -12,6 +12,7 @@ import com.app.job_management.exception.ApiException;
 import com.app.job_management.repository.UserRepository;
 import com.app.job_management.entity.Role;
 import com.app.job_management.entity.User;
+import com.app.job_management.entity.UserStatus;
 import com.app.job_management.security.JwtService;
 
 @Service
@@ -51,6 +52,10 @@ public class AuthService {
     public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Invalid email or password"));
+
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "User account is inactive");
+        }
 
         boolean passwordMatches = passwordEncoder.matches(request.password(), user.getPassword());
         if (!passwordMatches) {

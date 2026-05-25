@@ -20,4 +20,10 @@ public interface JobApplicationRepository extends JpaRepository<JobApplication, 
     Optional<JobApplication> findByIdAndJobCompanyId(Long id, Long companyId);
 
     List<JobApplication> findByStatus(ApplicationStatus status);
+
+    long countByStatus(ApplicationStatus status);
+
+    long countByJobCompanyId(Long companyId);
+
+    long countByJobCompanyIdAndStatus(Long companyId, ApplicationStatus status);
 }

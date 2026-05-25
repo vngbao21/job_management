@@ -47,8 +47,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/register", "/api/auth/login", "/api/health", "/swagger-ui.html",
                                 "/swagger-ui/**", "/v3/api-docs/**")
                         .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/uploads/cv/**")
+                        .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/jobs/**")
                         .permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/files/cv")
+                        .hasRole("CANDIDATE")
                         .requestMatchers(HttpMethod.POST, "/api/jobs/*/apply")
                         .hasRole("CANDIDATE")
                         .requestMatchers("/api/candidate/**")

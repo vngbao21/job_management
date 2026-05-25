@@ -21,6 +21,12 @@ public interface JobRepository extends JpaRepository<Job, Long> {
 
     List<Job> findByStatus(JobStatus status);
 
+    long countByStatus(JobStatus status);
+
+    long countByCompany(Company company);
+
+    long countByCompanyAndStatus(Company company, JobStatus status);
+
     Optional<Job> findByIdAndStatus(Long id, JobStatus status);
 
     @Query("""
